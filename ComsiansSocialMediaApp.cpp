@@ -37,13 +37,20 @@ public:
     }
 };
 
+struct Post;
+
 struct User
 {
     string username;
     string name;
     string password;
     queue<User*> requests;
-    list<string> myLinkedList;
+    list<Post*> posts;
+};
+struct Post{
+    int likes = 0;
+    string myPost;
+    list<User*> postUser;
 };
 
 struct Node
@@ -66,6 +73,7 @@ void showFriends(User *user);
 void addPost(User *user);
 void showMyPost(User *user);
 void showFeed(User *user);
+void likePost(User *user);
 
 
 void myMainCall(){
@@ -205,8 +213,9 @@ void mainMenu(User *user)
     }else if(opt=="6"){
         showFeed(user);
         mainMenu(user);
-    }else if(opt=="2"){
-
+    }else if(opt=="7"){
+        likePost(user);
+        mainMenu(user);
     }else if(opt=="2"){
 
     }else if(opt=="0"){
@@ -235,11 +244,20 @@ User* login() {
     }
     return NULL;
 }
+void printStruct(const Post &post){
+    cout<<"Post: "<<post.myPost<<" Likes: "<<post.likes<<endl;
+};
 
-void display(list<string> myList){
-    list<string>::iterator it;
-    for (it = myList.begin(); it != myList.end(); ++it){
-        cout<<*it<<endl;
+void display(list<Post*> myList){
+//    list<Post*>::iterator it;
+//    for (it = myList.begin(); it != myList.end(); ++it){
+//        cout<<*it<<endl;
+//    }
+    int count = 1;
+    for(auto const &item: myList){
+        cout<<count<<". ";
+        printStruct(*item);
+        count++;
     }
 }
 
@@ -299,7 +317,7 @@ void send_request(User *sender, User *receiver)
 }
 
 User* search(string username){
-    for (int i = 1;i<SIZE;i++) {
+    for (int i = 0;i<SIZE;i++) {
         if(matrix[i][0]->user->username == username){
             return matrix[i][0]->user;
         }
@@ -369,22 +387,62 @@ void showFriends(User *user){
 }
 void addPost(User *user){
     string post;
-    cout<<"Add a post: ";
+    cout<<"Add a posts: ";
     cin>>post;
-    user->myLinkedList.push_back(post);
+    Post *newPost = new Post;
+    newPost->myPost = post;
+    user->posts.push_back(newPost);
     cout<<"\nPOST ADDED\n";
 }
 void showMyPost(User *user){
-    display(user->myLinkedList);
+    display(user->posts);
 }
+void likePost(User *user) {
+    string usernameInput;
+    int postId;
+
+    cout<<"Enter User Name: ";
+    cin>>usernameInput;
+
+    cout<<"Enter Post Id: ";
+    cin>>postId;
+    if(isalpha(postId)){
+        cout<<"<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>>"<<endl;
+        return;
+    }
+
+    int liked = search(search(usernameInput));
+
+    Post *post = NULL;
+
+    int count = 1;
+
+    if(matrix[liked][0]->user->posts.size()<postId){
+        cout<<"\n <<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>> \n";
+        return;
+    }
+    for(auto const &item: matrix[liked][0]->user->posts){
+        post = item;
+        if(count >= postId){
+            break;
+        }
+        count++;
+    }
+    post->likes++;
+    post->postUser.push_back(user);
+    
+}
+
 void showFeed(User *user){
     int userIndex = search(user);
     for (int i = 1;i<SIZE;i++) {
         if(matrix[userIndex][i] == NULL){
-            return;
+            break;
         }else{
             cout<<"USER : "<<matrix[userIndex][i]->user->name<<" \nPOSTS:\n ";
-            display(matrix[userIndex][i]->user->myLinkedList);
+            display(matrix[userIndex][i]->user->posts);
         }
     }
+    likePost(user);
 }
+
