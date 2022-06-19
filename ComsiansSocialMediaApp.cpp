@@ -41,6 +41,7 @@ struct Post;
 
 struct User
 {
+    string city;
     string username;
     string name;
     string password;
@@ -74,6 +75,9 @@ void addPost(User *user);
 void showMyPost(User *user);
 void showFeed(User *user);
 void likePost(User *user);
+void dijkstra(string sourceNode);
+void closeFriends(User *user);
+void friendSuggestions(User *user);
 
 
 void myMainCall(){
@@ -113,13 +117,42 @@ void myMainCall(){
 //            cin>>user->password;
 //            signUp(user);
 
+//            string city;
+//            cout<<"CHOOSE YOUR CITY NAME FROM THIS LIST";
+//            cout<<"1) ISLAMABAD\n 2) KARACHI \n3) RAWALPINDI \n 4) HYDERABAD \n 5) QUETTA \n 6) LAHORE \n 7) PESHAWAR\n";
+//            cout<<"ENTER YOUR CHOICE: ";
+//            cin>>city;
+//
+//            if(city == "1"){
+//                user->city = "ISLAMABAD";
+//            }else if(city == "2"){
+//                user->city = "KARACHI";
+//            }else if(city == "3"){
+//                user->city = "RAWALPINDI";
+//            }else if(city == "4"){
+//                user->city = "HYDERABAD";
+//            }else if(city == "5"){
+//                user->city = "QUETTA";
+//            }else if(city == "6"){
+//                user->city = "LAHORE";
+//            }else if(city == "7"){
+//                user->city = "PESHAWAR";
+//            }else{
+//                cout<<"<<<<<<<<<<<< WRONG INPUT >>>>>>>>>>> \n DEFAULT CITY ADDED IS ISLAMABAD\n";
+//                user->city = "ISLAMABAD";
+//            }
+//
+//            signUp(user);
+
             User *user = new User;
+            user->city = "HYDERABAD";
             user->name = "Deepak";
             user->username = "deepak";
             user->password = "d";
             signUp(user);
 
             User *user2 = new User;
+            user2->city = "RAWALPINDI";
             user2->name = "Rashid";
             user2->username = "rashid";
             user2->password = "r";
@@ -129,27 +162,32 @@ void myMainCall(){
             user3->name = "Ahmad";
             user3->username = "ahmad";
             user3->password = "a";
+            user3->city = "LAHORE";
             signUp(user3);
 
             User *user4 = new User;
+            user4->city = "QUETTA";
             user4->name = "Faisal";
             user4->username = "faisal";
             user4->password = "f";
             signUp(user4);
 
             User *user5 = new User;
+            user5->city = "PESHAWAR";
             user5->name = "Ibrar";
             user5->username = "ibrar";
             user5->password = "i";
             signUp(user5);
 
             User *user6 = new User;
+            user6->city = "KARACHI";
             user6->name = "Ibrahim";
             user6->username = "ibrahim";
             user6->password = "i";
             signUp(user6);
 
             User *user7 = new User;
+            user7->city = "LAHORE";
             user7->name = "Aaraiz";
             user7->username = "aaraiz";
             user7->password = "a";
@@ -174,7 +212,9 @@ void mainMenu(User *user)
     cout << "-----------------------------------------------------\n";
     cout << "---------------- Welcome " + user->username + " ---------------------\n";
     cout << "-----------------------------------------------------\n";
-    cout << "Press 1 SEND REQUESTS \nPress 2 CHECK FRIEND REQUESTS \nPress 3 SHOW MY FRIENDS \nPress 4 Add Post \nPress 5 Show my Posts \nPress 6 Show Feed\nPress 0 to exit" << endl;
+    cout << "Press 1 SEND REQUESTS \nPress 2 CHECK FRIEND REQUESTS \nPress 3 SHOW MY FRIENDS \nPress 4 Add Post "
+            "\nPress 5 Show my Posts \nPress 6 Show Feed\n Press 7 To show you Nearby Cities Distances "
+            "\n Press 8 To Check your Closest Friend \n Press 9 To show Friend Suggestions \nPress 0 to exit" << endl;
     cout << "-----------------------------------------------\n";
     cout << "ENTER YOUR CHOICE: ";
     cin >> opt;
@@ -214,10 +254,14 @@ void mainMenu(User *user)
         showFeed(user);
         mainMenu(user);
     }else if(opt=="7"){
-        likePost(user);
+        dijkstra(user->city);
         mainMenu(user);
-    }else if(opt=="2"){
-
+    }else if(opt=="8"){
+        closeFriends(user);
+        mainMenu(user);
+    }else if(opt=="9"){
+        friendSuggestions(user);
+        mainMenu(user);
     }else if(opt=="0"){
         myMainCall();
     }else{
@@ -397,42 +441,66 @@ void addPost(User *user){
 void showMyPost(User *user){
     display(user->posts);
 }
+bool postIdVerification(string id){
+    for(int i=0;i<id.size();i++){
+        if(!isdigit(id[i])){
+            return false;
+        }
+    }
+    return true;
+}
 void likePost(User *user) {
     string usernameInput;
-    int postId;
+    string id;
 
-    cout<<"Enter User Name: ";
-    cin>>usernameInput;
+    cout << "Enter User Name: ";
+    cin >> usernameInput;
 
-    cout<<"Enter Post Id: ";
-    cin>>postId;
-    if(isalpha(postId)){
-        cout<<"<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>>"<<endl;
+    cout << "Enter Post Id: ";
+    cin >> id;
+
+    if (!postIdVerification(id)) {
+        cout << "<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>>" << endl;
         return;
     }
-
+    int postId = stoi(id);
     int liked = search(search(usernameInput));
-
+    if(liked == -1){
+        cout<<"USER NOT FOUND";
+        return;
+    }
     Post *post = NULL;
 
     int count = 1;
 
-    if(matrix[liked][0]->user->posts.size()<postId){
-        cout<<"\n <<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>> \n";
+    if (matrix[liked][0]->user->posts.size() < postId) {
+        cout << "\n <<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>> \n";
         return;
     }
-    for(auto const &item: matrix[liked][0]->user->posts){
+    for (auto const &item: matrix[liked][0]->user->posts) {
         post = item;
-        if(count >= postId){
+        if (count >= postId) {
             break;
         }
         count++;
     }
     post->likes++;
     post->postUser.push_back(user);
-    
-}
 
+    int liker = search(user);
+    for (int i = 1; i < SIZE; i++) {
+        if (matrix[liked][i] != NULL) {
+            if (matrix[liked][i]->user->username == user->username) {
+                matrix[liked][i]->weight -= 4;
+            }
+        }
+        if (matrix[liked][i] != NULL) {
+            if (matrix[liker][i]->user->username == matrix[liked][0]->user->username) {
+                matrix[liker][i]->weight -= 4;
+            }
+        }
+    }
+}
 void showFeed(User *user){
     int userIndex = search(user);
     for (int i = 1;i<SIZE;i++) {
@@ -445,4 +513,120 @@ void showFeed(User *user){
     }
     likePost(user);
 }
+void dijkstra(string sourceNode){
+    const int n = 7;
+    string cities[n] = {"ISLAMABAD", "KARACHI", "RAWALPINDI", "HYDERABAD", "QUETTA", "LAHORE", "PESHAWAR"};
 
+    const int i1 = 9999;
+    int graph[n][n] = {
+            {i1, 30, 5, i1, i1, i1, i1},
+            {30, i1, i1, 6, 14, 12, i1},
+            {5, i1, i1, i1, i1, 15, 10},
+            {i1, 6, i1, i1, i1, i1, i1},
+            {i1, 14, i1, i1, i1, i1, 20},
+            {i1, 12, 15, i1, i1, i1, i1},
+            {i1, i1, 10, i1, 20, i1, i1}
+    };
+
+    int src = -1;
+
+    for(int i = 0; i<7; i++){
+        if(sourceNode == cities[i]){
+            src = i;
+            break;
+        }
+    }
+    if(src == -1){
+        cout<<"Node does not exists"<<endl;
+        return;
+    }
+    int count = 1;
+
+    int path[n];
+    for(int i=0;i<n;i++)
+        path[i] = graph[src][i];
+
+    int visited[n] = {0};
+    visited[src] = 1;
+
+    while(count<n)
+    {
+        int minNode;
+        int minVal = i1;
+
+        for(int i=0;i<n;i++)
+            if(visited[i] == 0 && path[i]<minVal)
+            {
+                minVal = path[i];
+                minNode = i;
+            }
+
+        visited[minNode] = 1;
+
+        for(int i=0;i<n;i++)
+            if(visited[i] == 0)
+                path[i] = min(path[i],minVal+graph[minNode][i]);
+
+        count++;
+    }
+    path[src] = 0;
+    for(int i=0;i<n;i++)
+        cout << "Shortest distance from " << sourceNode << " to " << cities[i] << " -> " << path[i] << endl;
+}
+
+void closeFriends(User *user){
+    int userIndex = search(user);
+    int minValue = INT16_MAX;
+
+    User *user1 = NULL;
+    for(int i=1;i<SIZE;i++){
+        if(matrix[userIndex][i] == NULL){
+            break;
+        }else if(matrix[userIndex][i]->weight<minValue){
+            user1 = matrix[userIndex][i]->user;
+            minValue = matrix[userIndex][i]->weight;
+        }
+    }
+    if(user1!=NULL){
+        cout<<"^^^^^ YOUR CLOSEST FRIEND IS ^^^^^^^ "<<"\n\t"<<user1->name<<endl<<endl;
+    }else{
+        cout<<"YOU HAVE NO ANY CLOSE FRIEND"<<endl;
+    }
+}
+
+bool myFriendExists(string userName,int index){
+    for(int i=0;i<SIZE;i++) {
+        if(matrix[index][i]== NULL){
+            return false;
+        }
+        if(matrix[index][i]->user->username == userName){
+            return true;
+        }
+    }
+    return false;
+}
+void friendSuggestions(User *user){
+    int userIndex = search(user);
+    if(matrix[userIndex][1] == NULL){
+        cout<<"NO FRIEND SUGGESTIONS LIST IS AVAILABLE\n";
+        return;
+    }
+    for(int i=1;i<SIZE;i++) {
+        if (matrix[userIndex][i] == NULL) {
+            break;
+        }else{
+            int friendIndex = search(matrix[userIndex][i]->user);
+            if(friendIndex == -1){
+                cout<<"NO FRIEND SUGGESTIONS LIST IS AVAILABLE\n";
+                return;
+            }
+            for(int j=1;j<SIZE;j++) {
+                if(matrix[friendIndex][j] == NULL){
+                    break;
+                }else if(!myFriendExists(matrix[friendIndex][j]->user->username,userIndex)){
+                    cout<<"SUGGESTED FRIEND IS: "<<matrix[friendIndex][j]->user->username<<endl;
+                }
+            }
+        }
+    }
+}
