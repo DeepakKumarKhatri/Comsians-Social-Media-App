@@ -4,43 +4,148 @@
 #define SIZE 50
 using namespace std;
 
-class MyLinkedList
+struct list_node
+{
+    string data;
+    list_node *next = NULL;
+    list_node *previous = NULL;
+};
+list_node *head = NULL;
+list_node *tail = NULL;
+void insert_end(string element)
+{
+    list_node *current = new list_node;
+    current->data = element;
+    if (head == NULL)
+    {
+        head = tail = current;
+    }
+    else
+    {
+        tail->next = current;
+        current->previous = tail;
+        tail = current;
+    }
+}
+
+struct hashMap
+{
+    string value;
+    int frequency = 0;
+};
+int hash_map[3000];
+void initilizeMap()
+{
+    for (int i = 0; i < 3000; i++)
+    {
+        hash_map[i] = 0;
+    }
+}
+int getAsciValues(string str)
+{
+    int value = 0;
+    int asci = 0;
+    for (int i = 0; i < str.size(); i++)
+    {
+        asci = str[i] - 64;
+        value += asci;
+    }
+    return value;
+}
+void pushHashMap(string str)
+{
+    int index = getAsciValues(str);
+    hash_map[index]++;
+}
+
+class Que
 {
 public:
-    string data;
-    MyLinkedList *next = NULL;
-    MyLinkedList *previous = NULL;
-    MyLinkedList *first = NULL;
-    MyLinkedList *last = NULL;
+    int size, front, rear;
+    hashMap **que;
 
-    void displayTheData()
+    Que()
     {
-        MyLinkedList *p = first;
-        if (first == NULL)
+        size = 10;
+        front = rear = -1;
+        que = new hashMap *[size];
+    }
+
+    Que(int s)
+    {
+        size = s;
+        front = rear = -1;
+        que = new hashMap *[size];
+    }
+
+    bool is_empty()
+    {
+        if (rear == -1)
         {
-            cout << "List Is Empty";
+            return true;
         }
         else
         {
-            while (p != NULL)
+            return false;
+        }
+    }
+
+    bool is_full()
+    {
+        if (rear == size - 1)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    void display()
+    {
+        if (is_empty())
+        {
+            cout << "Queue is empty\n";
+        }
+        else
+        {
+            for (int i = front; i <= rear; i++)
             {
-                cout << p->data << endl;
+                cout << (i + 1) << ". " << que[i]->value << endl;
             }
         }
     }
-    void insert_end(string element)
+
+    void enqueue(hashMap *x)
     {
-        MyLinkedList *current = new MyLinkedList;
-        current->data = element;
-        if (first == NULL)
+        if (is_full())
         {
-            first = last = current;
+            cout << "No space\n";
         }
         else
         {
-            last->next = current;
-            current->previous = last;
-            last = current;
+            int i;
+            if (is_empty())
+            {
+                front = rear = i = 0;
+            }
+            else
+            {
+                i = front;
+                while (i <= rear && que[i]->frequency > x->frequency)
+                {
+                    i++;
+                }
+                int k = rear;
+                while (k >= i)
+                {
+                    que[k + 1] = que[k];
+                    k--;
+                }
+                rear++;
+            }
+            que[i] = x;
         }
     }
 };
@@ -59,6 +164,7 @@ struct User
 struct Post
 {
     int likes = 0;
+    int dislikes = 0;
     string myPost;
     list<User *> postUser;
 };
@@ -221,6 +327,7 @@ void myMainCall()
 int main()
 {
     initialize();
+    initilizeMap();
     myMainCall();
 }
 
@@ -348,7 +455,7 @@ User *login()
 }
 void printStruct(const Post &post)
 {
-    cout << "Post: " << post.myPost << " Likes: " << post.likes << endl;
+    cout << "Post: " << post.myPost << "\n(Likes: " << post.likes << ") (Dislikes: " << post.dislikes << ")" << endl;
 };
 
 void display(list<Post *> myList)
@@ -532,17 +639,8 @@ bool postIdVerification(string id)
     }
     return true;
 }
-void likePost(User *user)
+void likePost(User *user, string usernameInput, string id)
 {
-    string usernameInput;
-    string id;
-
-    cout << "Enter User Name: ";
-    cin >> usernameInput;
-
-    cout << "Enter Post Id: ";
-    cin >> id;
-
     if (!postIdVerification(id))
     {
         cout << "<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>>" << endl;
@@ -597,6 +695,62 @@ void likePost(User *user)
         }
     }
 }
+
+void dislike(User *user, string usernameInput, string id)
+{
+    if (!postIdVerification(id))
+    {
+        cout << "<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>>" << endl;
+        return;
+    }
+    int postId = stoi(id);
+    int liked = search(search(usernameInput));
+    if (liked == -1)
+    {
+        cout << "USER NOT FOUND";
+        return;
+    }
+    Post *post = NULL;
+
+    int count = 1;
+
+    if (matrix[liked][0]->user->posts.size() < postId)
+    {
+        cout << "\n <<<<<<<<<<<<<<<< INVALID POST ID >>>>>>>>>>>>>> \n";
+        return;
+    }
+    for (auto const &item : matrix[liked][0]->user->posts)
+    {
+        post = item;
+        if (count >= postId)
+        {
+            break;
+        }
+        count++;
+    }
+    post->dislikes++;
+    post->postUser.push_back(user);
+
+    int liker = search(user);
+    for (int i = 1; i < SIZE; i++)
+    {
+        if (matrix[liked][i] != NULL)
+        {
+            if (matrix[liked][i]->user->username == user->username)
+            {
+                matrix[liked][i]->weight += 4;
+            }
+        }
+        if (matrix[liker][i] != NULL)
+        {
+            if (matrix[liker][i]->user->username == matrix[liked][0]->user->username)
+            {
+                matrix[liker][i]->weight += 4;
+            }
+        }
+    }
+}
+
 void showFeed(User *user)
 {
     int userIndex = search(user);
@@ -612,7 +766,37 @@ void showFeed(User *user)
             display(matrix[userIndex][i]->user->posts);
         }
     }
-    likePost(user);
+
+    string option;
+    cout << "To Like post Enter 'l'\nTo Dislike enter 'd'\nTo exit enter '0'";
+    cin >> option;
+    if (option == "0")
+    {
+        mainMenu(user);
+    }
+
+    string usernameInput;
+    string id;
+
+    cout << "Enter User Name of person to liked or disliked: ";
+    cin >> usernameInput;
+
+    cout << "Enter Post Id: ";
+    cin >> id;
+
+    if (option == "l")
+    {
+        likePost(user, usernameInput, id);
+    }
+    else if (option == "d")
+    {
+        dislike(user, usernameInput, id);
+    }
+    else
+    {
+        cout << "INALID INPUT\n\n";
+    }
+    showFeed(user);
 }
 void dijkstra(string sourceNode)
 {
@@ -725,6 +909,7 @@ bool myFriendExists(string userName, int index)
 }
 void friendSuggestions(User *user)
 {
+    unordered_set<string> names;
     int userIndex = search(user);
     if (matrix[userIndex][1] == NULL)
     {
@@ -753,9 +938,39 @@ void friendSuggestions(User *user)
                 }
                 else if (!myFriendExists(matrix[friendIndex][j]->user->username, userIndex))
                 {
-                    cout << "SUGGESTED FRIEND IS: " << matrix[friendIndex][j]->user->username << endl;
+                    // cout << "SUGGESTED FRIEND IS: " << matrix[friendIndex][j]->user->username << endl;
+                    pushHashMap(matrix[friendIndex][j]->user->username);
+                    names.insert(matrix[friendIndex][j]->user->username);
                 }
             }
         }
+    }
+    Que q(100);
+    unordered_set<string>::iterator it;
+    for (it = names.begin(); it != names.end(); ++it)
+    {
+        hashMap *map = new hashMap;
+        map->frequency = hash_map[getAsciValues(*it)];
+        map->value = *it;
+        q.enqueue(map);
+    }
+    q.display();
+    cout << "ENTER USER NAME TO SEND REQUEST(0 to return): ";
+    string recevierName;
+    cin >> recevierName;
+    if (recevierName == "0")
+    {
+        return;
+    }
+    User *recevier = search(recevierName);
+    if (recevier != NULL)
+    {
+        send_request(user, recevier);
+        friendSuggestions(user);
+    }
+    else
+    {
+        cout << "RECIEVER NOT FOUND";
+        friendSuggestions(user);
     }
 }
